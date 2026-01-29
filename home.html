@@ -125,15 +125,14 @@
         lucide.createIcons();
 
         const sites = [
-            { name: "RBTV", url: "https://www.rbtvplus17.cyou/id" },
-            { name: "Apple", url: "https://www.apple.com" },
-            { name: "Aliexpress", url: "https://www.aliexpress.com" },
-            { name: "Facebook", url: "https://www.facebook.com" },
-            { name: "Google", url: "https://www.google.com" },
-            { name: "Instagram", url: "https://www.instagram.com" },
-            { name: "Youtube", url: "https://www.youtube.com" },
-            { name: "Wikipedia", url: "https://www.wikipedia.org" }
-        ];
+    { name: "Facebook", url: "https://www.facebook.com" },
+    { name: "Google", url: "https://www.google.com" },
+    { name: "Instagram", url: "https://www.instagram.com" },
+    { name: "RBTV", url: "https://www.rbtvplus17.cyou/id" },
+    { name: "Wikipedia", url: "https://www.wikipedia.org" },
+    { name: "X.com", url: "https://www.x.com" },
+    { name: "Youtube", url: "https://www.youtube.com" }
+      ];
 
         const grid = document.getElementById('grid');
         const input = document.getElementById('filterInput');
@@ -168,6 +167,18 @@
                 }
             });
         });
+
+
+        // --- LOGIKA BARU: REDIRECT KE GOOGLE SAAT ENTER ---
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const query = input.value.trim();
+            if (query !== "") {
+                // Alihkan ke Google Search
+                window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            }
+        }
+    });
     </script>
 
     <script>
