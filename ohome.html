@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage Browser</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            background-color: #fff;
+        }
+
+        /* Search Bar */
+        .search-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 40px;
+        }
+
+        .search-box {
+            width: 100%;
+            height: 45px;
+            background: #f1f3f4;
+            border-radius: 22px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border: 1px solid transparent;
+        }
+
+        .search-box:focus-within {
+            background: #fff;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+            border-color: #ddd;
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            outline: none;
+            padding-left: 10px;
+            font-size: 16px;
+        }
+
+        /* Grid System */
+        .shortcut-grid {
+            display: grid;
+            width: 100%;
+            max-width: 800px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .shortcut-grid { grid-template-columns: repeat(6, 1fr); }
+        }
+
+        /* Item Style */
+        .item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .item:hover {
+            transform: translateY(-5px);
+            opacity: 0.8;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .circle {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .label {
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Modal Password */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 340px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .modal-box h3 {
+            margin-bottom: 8px;
+            font-size: 18px;
+            color: #202124;
+        }
+
+        .modal-box p {
+            font-size: 13px;
+            color: #5f6368;
+            margin-bottom: 16px;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .modal-box input:focus {
+            border-color: #1a73e8;
+        }
+
+        .error-text {
+            color: #d93025;
+            font-size: 12px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-cancel {
+            background: #f1f3f4;
+            color: #3c4043;
+        }
+
+        .btn-submit {
+            background: #1a73e8;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-container">
+        <div class="search-box">
+            <i data-lucide="search" size="18" color="#5f6368"></i>
+            <input type="text" id="filterInput" placeholder="Ketik untuk filter atau cari di Google...">
+        </div>
+    </div>
+
+    <div class="shortcut-grid" id="grid"></div>
+
+    <!-- Modal Password untuk ?streaming -->
+    <div class="modal-overlay hidden" id="passwordModal">
+        <div class="modal-box">
+            <h3>Akses Terbatas</h3>
+            <p>Masukkan password untuk membuka mode streaming.</p>
+            <input type="password" id="passwordInput" placeholder="Password...">
+            <div class="error-text" id="errorMsg">Password salah!</div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="cancelBtn">Batal</button>
+                <button class="btn btn-submit" id="submitBtn">Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // PENGATURAN PASSWORD (Ubah sesuai keinginan)
+        const STREAMING_PASSWORD = "123";
+
+        // Daftar Situs Umum
+        const publicSites = [
+            { name: "Facebook", url: "https://www.facebook.com" },
+            { name: "Google", url: "https://www.google.com" },
+            { name: "Instagram", url: "https://www.instagram.com" },
+            { name: "RBTV", url: "https://www.rbtvplus17.cyou/id" },
+            { name: "Wikipedia", url: "https://www.wikipedia.org" },
+            { name: "X.com", url: "https://www.x.com" },
+            { name: "Youtube", url: "https://www.youtube.com" }
+        ];
+
+        // Daftar Situs Khusus ?streaming (Tambahkan link streaming Anda di sini)
+        const streamingSites = [
+            { name: "Netflix", url: "https://www.netflix.com" },
+            { name: "Disney+", url: "https://www.hotstar.com" },
+            { name: "Vidio", url: "https://www.vidio.com" },
+            { name: "Twitch", url: "https://www.twitch.tv" }
+        ];
+
+        let activeSites = [...publicSites];
+        const grid = document.getElementById('grid');
+        const input = document.getElementById('filterInput');
+
+        // Fungsi Render Shortcut
+        function renderGrid(siteList) {
+            grid.innerHTML = '';
+            siteList.forEach(site => {
+                // Memastikan hex warna selalu 6 digit
+                const color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+                
+                const el = document.createElement('a'); 
+                el.className = 'item';
+                el.href = site.url;
+                el.target = "_blank";
+                
+                el.innerHTML = `
+                    <div class="circle" style="background-color: ${color}">${site.name[0].toUpperCase()}</div>
+                    <div class="label">${site.name}</div>
+                `;
+                grid.appendChild(el);
+                site.element = el; 
+            });
+        }
+
+        // Cek parameter URL (?streaming)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isStreamingMode = urlParams.has('streaming');
+
+        if (isStreamingMode) {
+            // Cek apakah sudah pernah login di sesi tab ini
+            if (sessionStorage.getItem('streaming_unlocked') === 'true') {
+                activeSites = [...publicSites, ...streamingSites];
+                renderGrid(activeSites);
+            } else {
+                // Tampilkan modal password
+                const modal = document.getElementById('passwordModal');
+                const passInput = document.getElementById('passwordInput');
+                const errorMsg = document.getElementById('errorMsg');
+                const submitBtn = document.getElementById('submitBtn');
+                const cancelBtn = document.getElementById('cancelBtn');
+
+                modal.classList.remove('hidden');
+                passInput.focus();
+
+                function verifyPassword() {
+                    if (passInput.value === STREAMING_PASSWORD) {
+                        sessionStorage.setItem('streaming_unlocked', 'true');
+                        modal.classList.add('hidden');
+                        activeSites = [...publicSites, ...streamingSites];
+                        renderGrid(activeSites);
+                    } else {
+                        errorMsg.style.display = 'block';
+                        passInput.value = '';
+                        passInput.focus();
+                    }
+                }
+
+                submitBtn.addEventListener('click', verifyPassword);
+                passInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') verifyPassword();
+                });
+
+                // Jika batal, hapus parameter ?streaming dari URL dan muat mode normal
+                cancelBtn.addEventListener('click', () => {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    modal.classList.add('hidden');
+                    renderGrid(activeSites);
+                });
+            }
+        } else {
+            // Mode Normal
+            renderGrid(activeSites);
+        }
+
+        // Logika Filter
+        input.addEventListener('input', () => {
+            const query = input.value.toLowerCase();
+            activeSites.forEach(site => {
+                const isMatch = site.name.toLowerCase().includes(query);
+                if (isMatch) {
+                    site.element.classList.remove('hidden');
+                } else {
+                    site.element.classList.add('hidden');
+                }
+            });
+        });
+
+        // Redirect ke Google saat Enter
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const query = input.value.trim();
+                if (query !== "") {
+                    window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+                }
+            }
+        });
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker terdaftar!', reg))
+                    .catch(err => console.log('Registrasi gagal:', err));
+            });
+        }
+    </script>
+</body>
+</html>
