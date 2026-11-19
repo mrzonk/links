@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <!-- Pengaturan karakter dan viewport agar responsif di semua ukuran layar -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daftar Link — Galang Yoga Pratama</title>
+
+  <!-- Memuat font Inter dari Google Fonts untuk tipografi yang bersih dan modern -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Memuat Tailwind CSS untuk tata letak dan utilitas responsif -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Konfigurasi Tailwind agar mendukung dark mode berbasis class ".dark" pada <html>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Skrip inisialisasi tema lebih awal untuk mencegah kedipan layar (FOUC) -->
+  <script>
+    (function () {
+      try {
+        const savedTheme = localStorage.getItem('linkHubTheme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (err) {
+        // Abaikan jika akses localStorage dibatasi oleh browser
+      }
+    })();
+  </script>
+
+  <style>
+    /* Gaya dasar halus dan transisi warna saat mengganti tema */
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Animasi halus untuk notifikasi toast */
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .toast-visible {
+      animation: toastIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-indigo-500/20 selection:text-indigo-600 dark:selection:text-indigo-300">
+  <!-- Dekorasi latar belakang lembut -->
+  <div class="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+    <div class="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-400/15 blur-3xl dark:bg-indigo-500/10 sm:h-96 sm:w-96"></div>
+  </div>
+
+  <!-- Wadah utama halaman -->
+  <div class="relative mx-auto flex min-h-screen w-full max-w-xl flex-col justify-between px-4 py-6 sm:px-6 sm:py-10">
+    <!-- Bagian atas: Tombol salin link halaman & tombol ganti tema terang/gelap berbasis teks -->
+    <header class="flex items-center justify-between gap-2">
+      <button
+        id="copyPageLinkBtn"
+        type="button"
+        data-copy-url=""
+        aria-label="Salin link halaman ini"
+        class="inline-flex items-center justify-center rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur transition hover:border-slate-300 hover:bg-white active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900 sm:text-sm"
+      >
+        Salin Link Halaman
+      </button>
+
+      <button
+        id="themeToggleBtn"
+        type="button"
+        aria-label="Ganti tema terang atau gelap"
+        aria-pressed="false"
+        class="inline-flex items-center justify-center rounded-full border border-slate-200/90 bg-white/90 px-4 py-2 text-xs font-medium text-slate-700 shadow-sm backdrop-blur transition hover:border-slate-300 hover:bg-white active:scale-[0.98] dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-900 sm:text-sm"
+      >
+        <span id="themeToggleText">Gelap</span>
+      </button>
+    </header>
+
+    <!-- Konten utama: Profil dan daftar link -->
+    <main class="my-8 flex flex-col items-center sm:my-10">
+      <!-- Blok Profil / Avatar -->
+      <section class="flex w-full flex-col items-center text-center" aria-labelledby="profileName">
+        <div class="relative mb-4">
+          <!-- Avatar dengan fallback otomatis ke inisial teks jika gambar gagal dimuat -->
+          <img
+            id="profileAvatar"
+            src="https://placehold.co/240x240/4f46e5/ffffff?text=GYP"
+            alt="Foto profil Galang Yoga Pratama"
+            onerror="handleAvatarError(this)"
+            class="h-24 w-24 rounded-full border-4 border-white object-cover shadow-md ring-1 ring-slate-200 dark:border-slate-900 dark:ring-slate-800 sm:h-28 sm:w-28"
+          />
+        </div>
+
+        <h1 id="profileName" class="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+          Galang Yoga Pratama
+        </h1>
+        <p class="mt-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 sm:text-sm">
+          @galangyogapratama - Jakarta, Indonesia
+        </p>
+        <p class="mt-3 max-w-md text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+          Desainer produk dan kreator konten digital. Berbagi catatan desain, proyek pilihan, dan ruang diskusi santai seputar antarmuka web.
+        </p>
+      </section>
+
+      <!-- Daftar tombol link utama -->
+      <section class="mt-7 w-full space-y-3" aria-label="Daftar tautan utama">
+        <!-- Item Link 1 -->
+        <div class="group flex items-stretch gap-2 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50">
+          <a
+            href="https://example.com/portofolio"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white sm:text-base">
+                Portofolio dan Studi Kasus
+              </span>
+              <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+                Kumpulan proyek desain UI/UX pilihan
+              </span>
+            </span>
+          </a>
+          <button
+            type="button"
+            data-copy-url="https://example.com/portofolio"
+            data-copy-label="Portofolio dan Studi Kasus"
+            aria-label="Salin link Portofolio dan Studi Kasus"
+            class="flex shrink-0 items-center justify-center rounded-xl px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            Salin
+          </button>
+        </div>
+
+        <!-- Item Link 2 -->
+        <div class="group flex items-stretch gap-2 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50">
+          <a
+            href="https://example.com/catatan"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white sm:text-base">
+                Catatan dan Artikel Mingguan
+              </span>
+              <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+                Tips aksesibilitas, tipografi, dan sistem desain
+              </span>
+            </span>
+          </a>
+          <button
+            type="button"
+            data-copy-url="https://example.com/catatan"
+            data-copy-label="Catatan dan Artikel Mingguan"
+            aria-label="Salin link Catatan dan Artikel Mingguan"
+            class="flex shrink-0 items-center justify-center rounded-xl px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            Salin
+          </button>
+        </div>
+
+        <!-- Item Link 3 -->
+        <div class="group flex items-stretch gap-2 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50">
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white sm:text-base">
+                Repositori dan Komponen Open Source
+              </span>
+              <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+                Eksperimen front-end dan template siap pakai
+              </span>
+            </span>
+          </a>
+          <button
+            type="button"
+            data-copy-url="https://github.com"
+            data-copy-label="Repositori dan Komponen Open Source"
+            aria-label="Salin link Repositori dan Komponen Open Source"
+            class="flex shrink-0 items-center justify-center rounded-xl px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            Salin
+          </button>
+        </div>
+
+        <!-- Item Link 4 -->
+        <div class="group flex items-stretch gap-2 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50">
+          <a
+            href="https://example.com/jadwal-diskusi"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white sm:text-base">
+                Sesi Obrolan dan Konsultasi Singkat
+              </span>
+              <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+                Pilih slot waktu 20 menit untuk diskusi santai
+              </span>
+            </span>
+          </a>
+          <button
+            type="button"
+            data-copy-url="https://example.com/jadwal-diskusi"
+            data-copy-label="Sesi Obrolan dan Konsultasi Singkat"
+            aria-label="Salin link Sesi Obrolan dan Konsultasi Singkat"
+            class="flex shrink-0 items-center justify-center rounded-xl px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            Salin
+          </button>
+        </div>
+
+        <!-- Item Link 5 (Kontak Email) -->
+        <div class="group flex items-stretch gap-2 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/50">
+          <a
+            href="mailto:halo@contoh-domain.id"
+            class="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          >
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white sm:text-base">
+                Kirim Email Langsung
+              </span>
+              <span class="block truncate text-xs text-slate-500 dark:text-slate-400">
+                halo@contoh-domain.id
+              </span>
+            </span>
+          </a>
+          <button
+            type="button"
+            data-copy-url="halo@contoh-domain.id"
+            data-copy-label="Alamat Email"
+            aria-label="Salin alamat email halo@contoh-domain.id"
+            class="flex shrink-0 items-center justify-center rounded-xl px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            Salin
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer singkat -->
+    <footer class="pt-4 text-center text-xs text-slate-500 dark:text-slate-500">
+      <p>Dibuat dengan rapi dan ringan - Galang Yoga Pratama</p>
+    </footer>
+  </div>
+
+  <!-- Notifikasi toast singkat di pojok bawah -->
+  <div
+    id="toastContainer"
+    role="status"
+    aria-live="polite"
+    class="pointer-events-none fixed bottom-5 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 justify-center px-4"
+  >
+    <div
+      id="toastBox"
+      class="hidden items-center justify-center rounded-full border border-slate-800/80 bg-slate-900 px-4 py-2.5 text-xs font-medium text-white shadow-lg dark:border-slate-700 dark:bg-slate-800 sm:text-sm"
+    >
+      <span id="toastMessage">Link berhasil disalin!</span>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Mengganti avatar gambar menjadi badge inisial teks jika gambar gagal dimuat.
+     * @param {HTMLImageElement} imgEl
+     */
+    function handleAvatarError(imgEl) {
+      if (!imgEl || imgEl.dataset.fallbackApplied) return;
+      imgEl.dataset.fallbackApplied = 'true';
+
+      const fallbackDiv = document.createElement('div');
+      fallbackDiv.className =
+        'flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-indigo-600 text-2xl font-bold text-white shadow-md ring-1 ring-slate-200 dark:border-slate-900 dark:ring-slate-800 sm:h-28 sm:w-28 sm:text-3xl';
+      fallbackDiv.setAttribute('aria-label', 'Inisial Galang Yoga Pratama');
+      fallbackDiv.textContent = 'GYP';
+
+      imgEl.replaceWith(fallbackDiv);
+    }
+
+    (function () {
+      const htmlEl = document.documentElement;
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeToggleText = document.getElementById('themeToggleText');
+      const copyPageLinkBtn = document.getElementById('copyPageLinkBtn');
+      const toastBox = document.getElementById('toastBox');
+      const toastMessage = document.getElementById('toastMessage');
+
+      let toastTimer = null;
+
+      /**
+       * Menyinkronkan label teks dan status aksesibilitas tombol tema sesuai kondisi aktif.
+       */
+      function syncThemeUI() {
+        const isDark = htmlEl.classList.contains('dark');
+        if (themeToggleBtn) {
+          themeToggleBtn.setAttribute('aria-pressed', String(isDark));
+        }
+        if (themeToggleText) {
+          themeToggleText.textContent = isDark ? 'Terang' : 'Gelap';
+        }
+      }
+
+      /**
+       * Mengubah tema terang/gelap dan menyimpannya ke localStorage.
+       */
+      function toggleTheme() {
+        try {
+          const nextIsDark = !htmlEl.classList.contains('dark');
+          htmlEl.classList.toggle('dark', nextIsDark);
+          localStorage.setItem('linkHubTheme', nextIsDark ? 'dark' : 'light');
+          syncThemeUI();
+        } catch (err) {
+          htmlEl.classList.toggle('dark');
+          syncThemeUI();
+        }
+      }
+
+      /**
+       * Menampilkan notifikasi toast singkat di bagian bawah layar.
+       * @param {string} message
+       */
+      function showToast(message) {
+        if (!toastBox || !toastMessage) return;
+
+        toastMessage.textContent = message;
+        toastBox.classList.remove('hidden');
+        toastBox.classList.add('flex', 'toast-visible');
+
+        if (toastTimer) {
+          clearTimeout(toastTimer);
+        }
+
+        toastTimer = setTimeout(() => {
+          toastBox.classList.remove('flex', 'toast-visible');
+          toastBox.classList.add('hidden');
+        }, 2400);
+      }
+
+      /**
+       * Menyalin teks ke clipboard dengan fallback execCommand agar aman di berbagai konteks.
+       * @param {string} text
+       * @returns {Promise<boolean>}
+       */
+      async function copyTextToClipboard(text) {
+        if (!text) return false;
+
+        try {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+        } catch (err) {
+          // Lanjut ke metode fallback di bawah
+        }
+
+        try {
+          const tempTextarea = document.createElement('textarea');
+          tempTextarea.value = text;
+          tempTextarea.setAttribute('readonly', '');
+          tempTextarea.style.position = 'fixed';
+          tempTextarea.style.top = '-9999px';
+          tempTextarea.style.left = '-9999px';
+          document.body.appendChild(tempTextarea);
+          tempTextarea.select();
+          tempTextarea.setSelectionRange(0, tempTextarea.value.length);
+
+          const copied = document.execCommand('copy');
+          document.body.removeChild(tempTextarea);
+          return Boolean(copied);
+        } catch (err) {
+          return false;
+        }
+      }
+
+      /**
+       * Menangani klik tombol salin link (baik link halaman maupun link item tertentu).
+       * @param {HTMLElement} buttonEl
+       */
+      async function handleCopyClick(buttonEl) {
+        const isPageButton = buttonEl.id === 'copyPageLinkBtn';
+        const targetUrl = isPageButton
+          ? window.location.href
+          : buttonEl.getAttribute('data-copy-url') || window.location.href;
+        const label = buttonEl.getAttribute('data-copy-label');
+
+        const success = await copyTextToClipboard(targetUrl);
+        if (success) {
+          if (isPageButton) {
+            showToast('Link halaman berhasil disalin!');
+          } else if (label) {
+            showToast(`Link "${label}" disalin!`);
+          } else {
+            showToast('Link berhasil disalin!');
+          }
+        } else {
+          showToast('Gagal menyalin link. Silakan salin manual.');
+        }
+      }
+
+      // Pasang event listener untuk tombol ganti tema
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+      }
+
+      // Pasang event listener untuk semua tombol dengan atribut data-copy-url
+      document.querySelectorAll('[data-copy-url]').forEach((btn) => {
+        btn.addEventListener('click', () => handleCopyClick(btn));
+      });
+
+      // Sinkronkan tampilan awal tema
+      syncThemeUI();
+    })();
+  </script>
+</body>
+</html>
